@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -202,6 +201,19 @@ const ChamaBot = () => {
     toast.success('Weekly summary sent!');
   };
 
+  const triggerWeeklyReminder = () => {
+    if (member) {
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const nextWeekFormatted = nextWeek.toLocaleDateString('en-GB');
+      
+      addMessage(`🗓️ Happy Friday ${member.name}! 💚\n\nWeekend reminder: Don't forget about your Chama contribution goal this month.\n\n📊 Current progress: KES ${member.currentMonthContributions.toLocaleString()} / KES ${member.monthlyGoal.toLocaleString()}\n\nHave a wonderful weekend! 🌟`, 'bot');
+      toast.success('Weekly Friday reminder sent!');
+    } else {
+      toast.error('Please join the Chama first');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Header */}
@@ -242,6 +254,14 @@ const ChamaBot = () => {
             className="text-xs"
           >
             📊 Weekly Summary
+          </Button>
+          <Button 
+            onClick={triggerWeeklyReminder} 
+            size="sm" 
+            variant="outline"
+            className="text-xs"
+          >
+            🗓️ Friday Reminder
           </Button>
         </div>
       </div>
