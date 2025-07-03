@@ -9,9 +9,31 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          added_on: string | null
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          added_on?: string | null
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          added_on?: string | null
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
       contributions: {
         Row: {
           amount: number
+          category: string | null
           date_paid: string | null
           id: string
           member_id: string | null
@@ -19,6 +41,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          category?: string | null
           date_paid?: string | null
           id?: string
           member_id?: string | null
@@ -26,6 +49,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category?: string | null
           date_paid?: string | null
           id?: string
           member_id?: string | null
@@ -46,16 +70,19 @@ export type Database = {
           id: string
           name: string
           phone: string
+          registration_date: string | null
         }
         Insert: {
           id?: string
           name: string
           phone: string
+          registration_date?: string | null
         }
         Update: {
           id?: string
           name?: string
           phone?: string
+          registration_date?: string | null
         }
         Relationships: []
       }
