@@ -15,6 +15,9 @@ interface Message {
   phone?: string;
 }
 
+// Fixed backend URL - change this to your production backend URL
+const BACKEND_URL = 'http://localhost:5000';
+
 const ChamaBot = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -37,13 +40,9 @@ const ChamaBot = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const getEndpointUrl = () => {
-    return localStorage.getItem('chamabot_endpoint') || 'http://localhost:5000';
-  };
-
   const testConnection = async () => {
     try {
-      const response = await fetch(`${getEndpointUrl()}/webhook`, {
+      const response = await fetch(`${BACKEND_URL}/webhook`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +94,7 @@ const ChamaBot = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${getEndpointUrl()}/webhook`, {
+      const response = await fetch(`${BACKEND_URL}/webhook`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +127,7 @@ const ChamaBot = () => {
       let errorMessage = "I'm having trouble connecting to the backend. ";
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        errorMessage += "Please check:\n• Is your Flask backend running on " + getEndpointUrl() + "?\n• Did you configure CORS in your Flask app?\n• Try updating the backend URL in Settings ⚙️";
+        errorMessage += "Please check if the backend is running and accessible.";
       } else {
         errorMessage += "Error: " + (error as Error).message;
       }
@@ -228,12 +227,12 @@ const ChamaBot = () => {
                 <div>
                   <p className="font-medium">Backend connection failed</p>
                   <p className="text-xs mt-1">
-                    Backend URL: <code className="bg-red-100 px-1 rounded">{getEndpointUrl()}</code>
+                    Backend URL: <code className="bg-red-100 px-1 rounded">{BACKEND_URL}</code>
                   </p>
                   <p className="text-xs mt-1">
                     • Make sure your Flask backend is running<br/>
                     • Check CORS configuration<br/>
-                    • Update URL in Settings ⚙️ if needed
+                    • Verify the backend URL is correct
                   </p>
                 </div>
               </div>
