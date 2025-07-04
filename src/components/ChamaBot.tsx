@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,14 @@ const ChamaBot = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Welcome to Chama Bot! 👋 I'm here to help you manage your Chama contributions. Type 'Join Chama' to get started or ask me anything about your contributions.",
+      text: "Welcome to Chama Bot! 👋 I'm here to help you manage your Chama contributions. Enter your name and phone number below, then type 'Join Chama' to get started or ask me anything about your contributions.",
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [memberName, setMemberName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -79,6 +81,14 @@ const ChamaBot = () => {
       });
       return;
     }
+    if (!memberName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name to send messages.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -100,7 +110,8 @@ const ChamaBot = () => {
         },
         body: JSON.stringify({
           message: currentMessage,
-          phone: phoneNumber
+          phone: phoneNumber,
+          name: memberName
         })
       });
 
@@ -192,7 +203,14 @@ const ChamaBot = () => {
       <Card className="mb-4">
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1">
+              <User className="h-4 w-4 text-green-600" />
+              <Input
+                placeholder="Enter your full name (e.g., John Doe)"
+                value={memberName}
+                onChange={(e) => setMemberName(e.target.value)}
+                className="flex-1"
+              />
               <Phone className="h-4 w-4 text-green-600" />
               <Input
                 placeholder="Enter your phone number (e.g., +254700000000)"
@@ -324,7 +342,7 @@ const ChamaBot = () => {
               />
               <Button
                 onClick={sendMessage}
-                disabled={isLoading || !currentMessage.trim() || !phoneNumber.trim() || connectionStatus === 'disconnected'}
+                disabled={isLoading || !currentMessage.trim() || !phoneNumber.trim() || !memberName.trim() || connectionStatus === 'disconnected'}
                 className="self-end"
               >
                 {isLoading ? (
