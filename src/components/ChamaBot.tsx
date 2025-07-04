@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +14,8 @@ interface Message {
   phone?: string;
 }
 
-// Fixed backend URL - change this to your production backend URL
-const BACKEND_URL = 'http://localhost:5000';
+// Fixed backend URL - now pointing to your production backend
+const BACKEND_URL = 'https://chamabot-05jx.onrender.com';
 
 const ChamaBot = () => {
   const [messages, setMessages] = useState<Message[]>([
