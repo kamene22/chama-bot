@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Phone, User, Bot, Loader2 } from 'lucide-react';
+import { Send, Phone, User, Bot, Loader2, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
@@ -27,6 +27,7 @@ const ChamaBot = () => {
   const [currentMessage, setCurrentMessage] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -39,6 +40,36 @@ const ChamaBot = () => {
   const getEndpointUrl = () => {
     return localStorage.getItem('chamabot_endpoint') || 'http://localhost:5000';
   };
+
+  const testConnection = async () => {
+    try {
+      const response = await fetch(`${getEndpointUrl()}/webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'test',
+          phone: 'test'
+        })
+      });
+      
+      if (response.ok) {
+        setConnectionStatus('connected');
+        return true;
+      } else {
+        setConnectionStatus('disconnected');
+        return false;
+      }
+    } catch (error) {
+      setConnectionStatus('disconnected');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    testConnection();
+  }, []);
 
   const sendMessage = async () => {
     if (!currentMessage.trim()) return;
@@ -76,10 +107,11 @@ const ChamaBot = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Backend returned ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      setConnectionStatus('connected');
       
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -91,19 +123,29 @@ const ChamaBot = () => {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      setConnectionStatus('disconnected');
+      
+      let errorMessage = "I'm having trouble connecting to the backend. ";
+      
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        errorMessage += "Please check:\n• Is your Flask backend running on " + getEndpointUrl() + "?\n• Did you configure CORS in your Flask app?\n• Try updating the backend URL in Settings ⚙️";
+      } else {
+        errorMessage += "Error: " + (error as Error).message;
+      }
+      
       toast({
         title: "Connection Error",
-        description: "Failed to connect to Chama Bot. Please check your connection and try again.",
+        description: "Failed to connect to backend. Check console for details.",
         variant: "destructive"
       });
       
-      const errorMessage: Message = {
+      const errorBotMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Sorry, I'm having trouble connecting right now. Please try again later.",
+        text: errorMessage,
         isUser: false,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorBotMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -124,20 +166,79 @@ const ChamaBot = () => {
     "Show my contributions"
   ];
 
+  const getConnectionIcon = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return <Wifi className="h-4 w-4 text-green-500" />;
+      case 'disconnected':
+        return <WifiOff className="h-4 w-4 text-red-500" />;
+      default:
+        return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+    }
+  };
+
+  const getConnectionText = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return 'Connected';
+      case 'disconnected':
+        return 'Disconnected';
+      default:
+        return 'Checking...';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto p-4">
-      {/* Phone Number Input */}
+      {/* Connection Status */}
       <Card className="mb-4">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <Phone className="h-4 w-4 text-green-600" />
-            <Input
-              placeholder="Enter your phone number (e.g., +254700000000)"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="flex-1"
-            />
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Phone className="h-4 w-4 text-green-600" />
+              <Input
+                placeholder="Enter your phone number (e.g., +254700000000)"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            <div className="flex items-center space-x-2 ml-4">
+              {getConnectionIcon()}
+              <span className={`text-sm ${
+                connectionStatus === 'connected' ? 'text-green-600' : 
+                connectionStatus === 'disconnected' ? 'text-red-600' : 'text-gray-500'
+              }`}>
+                {getConnectionText()}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={testConnection}
+                className="h-8 px-2"
+              >
+                Test
+              </Button>
+            </div>
           </div>
+          {connectionStatus === 'disconnected' && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Backend connection failed</p>
+                  <p className="text-xs mt-1">
+                    Backend URL: <code className="bg-red-100 px-1 rounded">{getEndpointUrl()}</code>
+                  </p>
+                  <p className="text-xs mt-1">
+                    • Make sure your Flask backend is running<br/>
+                    • Check CORS configuration<br/>
+                    • Update URL in Settings ⚙️ if needed
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -203,6 +304,7 @@ const ChamaBot = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentMessage(action)}
+                  disabled={connectionStatus === 'disconnected'}
                   className="text-xs"
                 >
                   {action}
@@ -220,11 +322,11 @@ const ChamaBot = () => {
                 onChange={(e) => setCurrentMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="flex-1 min-h-[44px] max-h-32 resize-none"
-                disabled={isLoading}
+                disabled={isLoading || connectionStatus === 'disconnected'}
               />
               <Button
                 onClick={sendMessage}
-                disabled={isLoading || !currentMessage.trim() || !phoneNumber.trim()}
+                disabled={isLoading || !currentMessage.trim() || !phoneNumber.trim() || connectionStatus === 'disconnected'}
                 className="self-end"
               >
                 {isLoading ? (
